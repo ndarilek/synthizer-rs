@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 
 "synthizer-sys" = { path = "../synthizer-sys" }
+"thiserror" = "1"
