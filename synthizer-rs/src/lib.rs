@@ -8,6 +8,7 @@ use thiserror::Error;
 #[error("Synthizer error: {0}")]
 pub struct SynthizerError(syz_ErrorCode);
 
+#[derive(Clone, Debug)]
 struct Handle(syz_Handle);
 
 impl Deref for Handle {
@@ -64,6 +65,7 @@ fn shutdown() -> Result<(), SynthizerError> {
     wrap(unsafe { syz_shutdown() })
 }
 
+#[derive(Clone, Debug)]
 pub struct Context(Handle);
 
 impl Context {
@@ -99,6 +101,7 @@ pub enum Protocol {
     File,
 }
 
+#[derive(Clone, Debug)]
 pub struct StreamingGenerator(Handle);
 
 impl StreamingGenerator {
@@ -126,6 +129,7 @@ impl StreamingGenerator {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Synthizer;
 
 impl Synthizer {
@@ -138,6 +142,10 @@ impl Synthizer {
         Context::new()
     }
 }
+
+unsafe impl Send for Synthizer {}
+
+unsafe impl Sync for Synthizer {}
 
 impl Drop for Synthizer {
     fn drop(&mut self) {
