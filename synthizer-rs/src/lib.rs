@@ -1,17 +1,12 @@
-use std::{fmt::Display, ops::Deref, ops::DerefMut};
+use std::{ops::Deref, ops::DerefMut};
 
 use log::Level;
 use synthizer_sys::*;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
+#[error("Synthizer error: {0}")]
 pub struct SynthizerError(syz_ErrorCode);
-
-impl Display for SynthizerError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "SynthizerError({})", self.0)
-    }
-}
 
 struct Handle(syz_Handle);
 
@@ -39,9 +34,9 @@ fn wrap(v: i32) -> Result<(), SynthizerError> {
 
 impl Drop for Handle {
     fn drop(&mut self) {
-        let rv = unsafe { syz_handleFree(self.0) };
-        if rv != 0 {
-            panic!("Failed to free handle");
+        let v = unsafe { syz_handleFree(self.0) };
+        if v != 0 {
+            panic!(format!("Failed to free handle: error code {}", v));
         }
     }
 }
@@ -49,6 +44,7 @@ impl Drop for Handle {
 pub enum LoggingBackend {
     Stderr = SYZ_LOGGING_BACKEND_SYZ_LOGGING_BACKEND_STDERR as isize,
 }
+
 pub fn set_log_level(level: Level) {
     let level = match level {
         Level::Error => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_ERROR,
@@ -71,7 +67,7 @@ pub fn shutdown() -> Result<(), SynthizerError> {
 pub struct Context(Handle);
 
 impl Context {
-    pub fn new() -> Result<Self, SynthizerError> {
+    fn new() -> Result<Self, SynthizerError> {
         let mut handle = Handle(0);
         let v = unsafe { syz_createContext(&mut *handle) };
         if v == 0 {
@@ -79,5 +75,25 @@ impl Context {
         } else {
             Err(SynthizerError(v))
         }
+    }
+}
+
+pub struct Synthizer;
+
+impl Synthizer {
+    pub fn new() -> Result<Self, SynthizerError> {
+        initialize()?;
+        Ok(Synthizer)
+    }
+
+    pub fn new_context(&self) -> Result<Context, SynthizerError> {
+        Context::new()
+    }
+}
+
+impl Drop for Synthizer {
+    fn drop(&mut self) {
+        shutdown()
+            .expect("Failed to shut down");
     }
 }
