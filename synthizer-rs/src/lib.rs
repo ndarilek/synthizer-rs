@@ -116,7 +116,10 @@ impl StreamingGenerator {
             Protocol::File => String::from("file"),
         };
         let protocol = protocol.as_ptr() as *const i8;
-        let path = path.as_os_str().to_string_lossy().as_ptr() as *const i8;
+        let path = path.canonicalize().unwrap();
+        let path = path.as_os_str().to_string_lossy();
+        // println!("Got path {}", path);
+        let path = path.as_ptr() as *const i8;
         let options = options.into().as_ptr() as *const i8;
         let v = unsafe {
             syz_createStreamingGenerator(&mut *handle, **context, protocol, path, options)
