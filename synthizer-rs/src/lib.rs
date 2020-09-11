@@ -1,4 +1,4 @@
-use std::{ops::Deref, ops::DerefMut};
+use std::{ops::Deref, ops::DerefMut, path::Path};
 
 use log::Level;
 use synthizer_sys::*;
@@ -56,11 +56,11 @@ pub fn set_log_level(level: Level) {
     unsafe { syz_setLogLevel(level) };
 }
 
-pub fn initialize() -> Result<(), SynthizerError> {
+fn initialize() -> Result<(), SynthizerError> {
     wrap(unsafe { syz_initialize() })
 }
 
-pub fn shutdown() -> Result<(), SynthizerError> {
+fn shutdown() -> Result<(), SynthizerError> {
     wrap(unsafe { syz_shutdown() })
 }
 
@@ -70,6 +70,54 @@ impl Context {
     fn new() -> Result<Self, SynthizerError> {
         let mut handle = Handle(0);
         let v = unsafe { syz_createContext(&mut *handle) };
+        if v == 0 {
+            Ok(Self(handle))
+        } else {
+            Err(SynthizerError(v))
+        }
+    }
+
+    pub fn new_streaming_generator<S: Into<String>>(
+        &mut self,
+        protocol: Protocol,
+        path: &Path,
+        options: S,
+    ) -> Result<StreamingGenerator, SynthizerError> {
+        StreamingGenerator::new(&self, protocol, path, options)
+    }
+}
+
+impl Deref for Context {
+    type Target = syz_Handle;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+pub enum Protocol {
+    File,
+}
+
+pub struct StreamingGenerator(Handle);
+
+impl StreamingGenerator {
+    fn new<S: Into<String>>(
+        context: &Context,
+        protocol: Protocol,
+        path: &Path,
+        options: S,
+    ) -> Result<Self, SynthizerError> {
+        let mut handle = Handle(0);
+        let protocol = match protocol {
+            Protocol::File => String::from("file"),
+        };
+        let protocol = protocol.as_ptr() as *const i8;
+        let path = path.as_os_str().to_string_lossy().as_ptr() as *const i8;
+        let options = options.into().as_ptr() as *const i8;
+        let v = unsafe {
+            syz_createStreamingGenerator(&mut *handle, **context, protocol, path, options)
+        };
         if v == 0 {
             Ok(Self(handle))
         } else {
@@ -93,7 +141,6 @@ impl Synthizer {
 
 impl Drop for Synthizer {
     fn drop(&mut self) {
-        shutdown()
-            .expect("Failed to shut down");
+        shutdown().expect("Failed to shut down");
     }
 }
