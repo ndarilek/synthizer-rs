@@ -1,5 +1,6 @@
 use std::{fmt::Display, ops::Deref, ops::DerefMut};
 
+use log::Level;
 use synthizer_sys::*;
 use thiserror::Error;
 
@@ -43,6 +44,20 @@ impl Drop for Handle {
             panic!("Failed to free handle");
         }
     }
+}
+
+pub enum LoggingBackend {
+    Stderr = SYZ_LOGGING_BACKEND_SYZ_LOGGING_BACKEND_STDERR as isize,
+}
+pub fn set_log_level(level: Level) {
+    let level = match level {
+        Level::Error => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_ERROR,
+        Level::Warn => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_WARN,
+        Level::Info => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_INFO,
+        Level::Debug => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_DEBUG,
+        _ => panic!("Level not supported"),
+    };
+    unsafe { syz_setLogLevel(level) };
 }
 
 pub fn initialize() -> Result<(), SynthizerError> {
