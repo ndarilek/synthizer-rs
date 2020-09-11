@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "synthizer-sys",
+    "synthizer-rs"
+]

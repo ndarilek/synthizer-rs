@@ -1,0 +1,9 @@
+[package]
+name = "synthizer"
+version = "0.1.0"
+authors = ["Nolan Darilek <nolan@thewordnerd.info>"]
+edition = "2018"
+
+[dependencies]
+
+"synthizer-sys" = { path = "../synthizer-sys" }
