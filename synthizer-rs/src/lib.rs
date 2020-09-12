@@ -1,4 +1,4 @@
-use std::{ops::Deref, ops::DerefMut, path::Path};
+use std::{ffi::CString, ops::Deref, ops::DerefMut, path::Path};
 
 use log::Level;
 use synthizer_sys::*;
@@ -123,12 +123,14 @@ impl StreamingGenerator {
         let protocol = match protocol {
             Protocol::File => String::from("file"),
         };
+        let protocol = CString::new(protocol.as_bytes()).expect("Unable to create C string");
         let protocol = protocol.as_ptr() as *const i8;
-        let path = path.canonicalize().unwrap();
         let path = path.as_os_str().to_string_lossy();
-        // println!("Got path {}", path);
+        let path = CString::new(path.as_bytes()).expect("Unable to create C string");
         let path = path.as_ptr() as *const i8;
-        let options = options.into().as_ptr() as *const i8;
+        let options = options.into();
+        let options = CString::new(options.as_bytes()).expect("Unable to create C string");
+        let options = options.as_ptr() as *const i8;
         let v = unsafe {
             syz_createStreamingGenerator(&mut *handle, **context, protocol, path, options)
         };
