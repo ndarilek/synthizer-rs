@@ -1,13 +1,14 @@
 use std::{env, path::Path};
 
 use log::Level;
-use synthizer::{Protocol, Synthizer, SynthizerError};
+use synthizer::{LoggingBackend, Protocol, Synthizer, SynthizerError};
 
 fn main() -> Result<(), SynthizerError> {
     let args = env::args().collect::<Vec<String>>();
     let file = args.get(1);
     if let Some(file) = file {
         synthizer::set_log_level(Level::Debug);
+        synthizer::configure_logging_backend(LoggingBackend::Stderr)?;
         let synthizer = Synthizer::new()?;
         let mut context = synthizer.new_context()?;
         let path = Path::new(file);

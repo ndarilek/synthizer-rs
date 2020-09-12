@@ -46,6 +46,14 @@ pub enum LoggingBackend {
     Stderr = SYZ_LOGGING_BACKEND_SYZ_LOGGING_BACKEND_STDERR as isize,
 }
 
+pub fn configure_logging_backend(backend: LoggingBackend) -> Result<(), SynthizerError> {
+    let backend = match backend {
+        LoggingBackend::Stderr => SYZ_LOGGING_BACKEND_SYZ_LOGGING_BACKEND_STDERR,
+    };
+    let param = std::ptr::null_mut();
+    wrap(unsafe { syz_configureLoggingBackend(backend, param) })
+}
+
 pub fn set_log_level(level: Level) {
     let level = match level {
         Level::Error => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_ERROR,
