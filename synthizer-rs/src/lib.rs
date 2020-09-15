@@ -1,4 +1,4 @@
-use std::{ffi::CString, ops::Deref, ops::DerefMut, path::Path, ptr::null_mut};
+use std::{ffi::CString, ops::Deref, ops::DerefMut, path::Path, ptr::null_mut, time::Duration};
 
 use enum_primitive_derive::Primitive;
 use log::Level;
@@ -179,6 +179,70 @@ impl Drop for Handle {
     }
 }
 
+pub enum Protocol {
+    File,
+}
+
+#[derive(Clone, Debug)]
+pub struct Buffer(Handle);
+
+impl Buffer {
+    pub fn new<S: Into<String>>(
+        protocol: Protocol,
+        path: &Path,
+        options: S,
+    ) -> Result<Self, SynthizerError> {
+        let mut handle = Handle(0);
+        let protocol = match protocol {
+            Protocol::File => String::from("file"),
+        };
+        let protocol = CString::new(protocol.as_bytes()).expect("Unable to create C string");
+        let protocol = protocol.as_ptr() as *const i8;
+        let path = path.as_os_str().to_string_lossy();
+        let path = CString::new(path.as_bytes()).expect("Unable to create C string");
+        let path = path.as_ptr() as *const i8;
+        let options = options.into();
+        let options = CString::new(options.as_bytes()).expect("Unable to create C string");
+        let options = options.as_ptr() as *const i8;
+        wrap!(
+            unsafe { syz_createBufferFromStream(&mut *handle, protocol, path, options) },
+            Self(handle)
+        )
+    }
+
+    pub fn get_channels(&self) -> Result<u32, SynthizerError> {
+        let out: *mut u32 = null_mut();
+        wrap!(unsafe { syz_bufferGetChannels(out, *self.0) }, out as u32)
+    }
+
+    pub fn get_length_in_samples(&self) -> Result<u32, SynthizerError> {
+        let out: *mut u32 = null_mut();
+        wrap!(
+            unsafe { syz_bufferGetLengthInSamples(out, *self.0) },
+            out as u32
+        )
+    }
+
+    pub fn get_length_in_seconds(&self) -> Result<f64, SynthizerError> {
+        let out: *mut f64 = null_mut();
+        wrap!(unsafe { syz_bufferGetLengthInSeconds(out, *self.0) }, {
+            let out = unsafe { out.as_ref() };
+            let out = out.cloned();
+            out.unwrap()
+        })
+    }
+
+    pub fn get_duration(&self) -> Result<Duration, SynthizerError> {
+        let seconds = self.get_length_in_seconds()?;
+        let seconds = seconds as u64;
+        Ok(Duration::from_secs(seconds))
+    }
+}
+
+unsafe impl Send for Buffer {}
+
+unsafe impl Sync for Buffer {}
+
 #[derive(Clone, Debug)]
 pub struct Context(Handle);
 
@@ -242,10 +306,6 @@ macro_rules! make_subclass {
             }
         }
     };
-}
-
-pub enum Protocol {
-    File,
 }
 
 #[derive(Clone, Debug)]
