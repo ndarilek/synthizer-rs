@@ -1,6 +1,8 @@
 use std::{ffi::CString, ops::Deref, ops::DerefMut, path::Path, ptr::null_mut};
 
+use enum_primitive_derive::Primitive;
 use log::Level;
+use num_traits::ToPrimitive;
 use synthizer_sys::*;
 use thiserror::Error;
 
@@ -44,8 +46,9 @@ impl DerefMut for Handle {
     }
 }
 
+#[derive(Primitive)]
 #[repr(i32)]
-enum Properties {
+enum Property {
     Azimuth = SYZ_PROPERTIES_SYZ_P_AZIMUTH,
     Buffer = SYZ_PROPERTIES_SYZ_P_BUFFER,
     ClosenessBoost = SYZ_PROPERTIES_SYZ_P_CLOSENESS_BOOST,
@@ -65,9 +68,9 @@ enum Properties {
 }
 
 impl Handle {
-    fn get_i(&self, property: i32) -> Result<*mut i32, SynthizerError> {
+    fn get_i(&self, property: i32) -> Result<i32, SynthizerError> {
         let out: *mut i32 = null_mut();
-        wrap!(unsafe { syz_getI(out, self.0, property) }, out)
+        wrap!(unsafe { syz_getI(out, self.0, property) }, out as i32)
     }
 
     fn set_i(&self, property: i32, value: i32) -> Result<(), SynthizerError> {
@@ -222,8 +225,12 @@ trait Source {
         wrap!(unsafe { syz_sourceRemoveGenerator(**self.handle(), **generator.handle()) })
     }
 
-    fn get_gain(&self) -> i32 {
-        self.handle().get_i(Properties::Gain)
+    fn get_gain(&self) -> Result<i32, SynthizerError> {
+        self.handle().get_i(Property::Gain.to_i32().unwrap())
+    }
+
+    fn set_gain(&self, value: i32) -> Result<(), SynthizerError> {
+        self.handle().set_i(Property::Gain.to_i32().unwrap(), value)
     }
 }
 
