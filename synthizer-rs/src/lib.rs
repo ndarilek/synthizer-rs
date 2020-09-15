@@ -193,6 +193,10 @@ impl Context {
     ) -> Result<StreamingGenerator, SynthizerError> {
         StreamingGenerator::new(&self, protocol, path, options)
     }
+
+    pub fn new_direct_source(&mut self) -> Result<DirectSource, SynthizerError> {
+        DirectSource::new(&self)
+    }
 }
 
 impl Deref for Context {
@@ -203,12 +207,20 @@ impl Deref for Context {
     }
 }
 
-macro_rules! make_superclass {
-    ($superclass:ident) => {
-        trait $superclass {
-            fn handle(&self) -> &Handle;
-        }
-    };
+trait Generator {
+    fn handle(&self) -> &Handle;
+}
+
+trait Source {
+    fn handle(&self) -> &Handle;
+
+    fn add_generator(&self, generator: &impl Generator) -> Result<(), SynthizerError> {
+        wrap!(unsafe { syz_sourceAddGenerator(**self.handle(), **generator.handle()) })
+    }
+
+    fn remove_generator(&self, generator: &impl Generator) -> Result<(), SynthizerError> {
+        wrap!(unsafe { syz_sourceRemoveGenerator(**self.handle(), **generator.handle()) })
+    }
 }
 
 macro_rules! make_subclass {
@@ -220,10 +232,6 @@ macro_rules! make_subclass {
         }
     };
 }
-
-make_superclass!(Generator);
-
-make_superclass!(Source);
 
 pub enum Protocol {
     File,
@@ -261,6 +269,20 @@ impl StreamingGenerator {
 }
 
 make_subclass!(StreamingGenerator, Generator);
+
+pub struct DirectSource(Handle);
+
+impl DirectSource {
+    fn new(context: &Context) -> Result<Self, SynthizerError> {
+        let mut handle = Handle(0);
+        wrap!(
+            unsafe { syz_createDirectSource(&mut *handle, **context) },
+            Self(handle)
+        )
+    }
+}
+
+make_subclass!(DirectSource, Source);
 
 #[derive(Clone, Debug)]
 pub struct Synthizer;
