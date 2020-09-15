@@ -29,6 +29,37 @@ macro_rules! wrap {
     }};
 }
 
+pub enum LoggingBackend {
+    Stderr = SYZ_LOGGING_BACKEND_SYZ_LOGGING_BACKEND_STDERR as isize,
+}
+
+pub fn configure_logging_backend(backend: LoggingBackend) -> Result<(), SynthizerError> {
+    let backend = match backend {
+        LoggingBackend::Stderr => SYZ_LOGGING_BACKEND_SYZ_LOGGING_BACKEND_STDERR,
+    };
+    let param = null_mut();
+    wrap!(unsafe { syz_configureLoggingBackend(backend, param) })
+}
+
+pub fn set_log_level(level: Level) {
+    let level = match level {
+        Level::Error => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_ERROR,
+        Level::Warn => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_WARN,
+        Level::Info => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_INFO,
+        Level::Debug => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_DEBUG,
+        _ => panic!("Level not supported"),
+    };
+    unsafe { syz_setLogLevel(level) };
+}
+
+fn initialize() -> Result<(), SynthizerError> {
+    wrap!(unsafe { syz_initialize() })
+}
+
+fn shutdown() -> Result<(), SynthizerError> {
+    wrap!(unsafe { syz_shutdown() })
+}
+
 #[derive(Clone, Debug)]
 pub struct Handle(syz_Handle);
 
@@ -146,37 +177,6 @@ impl Drop for Handle {
             panic!(format!("Failed to free handle: error code {}", v));
         }
     }
-}
-
-pub enum LoggingBackend {
-    Stderr = SYZ_LOGGING_BACKEND_SYZ_LOGGING_BACKEND_STDERR as isize,
-}
-
-pub fn configure_logging_backend(backend: LoggingBackend) -> Result<(), SynthizerError> {
-    let backend = match backend {
-        LoggingBackend::Stderr => SYZ_LOGGING_BACKEND_SYZ_LOGGING_BACKEND_STDERR,
-    };
-    let param = null_mut();
-    wrap!(unsafe { syz_configureLoggingBackend(backend, param) })
-}
-
-pub fn set_log_level(level: Level) {
-    let level = match level {
-        Level::Error => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_ERROR,
-        Level::Warn => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_WARN,
-        Level::Info => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_INFO,
-        Level::Debug => SYZ_LOG_LEVEL_SYZ_LOG_LEVEL_DEBUG,
-        _ => panic!("Level not supported"),
-    };
-    unsafe { syz_setLogLevel(level) };
-}
-
-fn initialize() -> Result<(), SynthizerError> {
-    wrap!(unsafe { syz_initialize() })
-}
-
-fn shutdown() -> Result<(), SynthizerError> {
-    wrap!(unsafe { syz_shutdown() })
 }
 
 #[derive(Clone, Debug)]
