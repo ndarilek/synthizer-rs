@@ -1,7 +1,7 @@
-use std::{env, path::Path};
+use std::{env, io, path::Path};
 
 use log::Level;
-use synthizer::{LoggingBackend, Protocol, Synthizer, SynthizerError};
+use synthizer::{LoggingBackend, Protocol, Source, Synthizer, SynthizerError};
 
 fn main() -> Result<(), SynthizerError> {
     let args = env::args().collect::<Vec<String>>();
@@ -14,6 +14,10 @@ fn main() -> Result<(), SynthizerError> {
         let path = Path::new(file);
         if path.exists() {
             let generator = context.new_streaming_generator(Protocol::File, path, "")?;
+            let source = context.new_direct_source()?;
+            source.add_generator(&generator)?;
+            let mut input = String::new();
+            io::stdin().read_line(&mut input).unwrap();
         } else {
             eprintln!("Path not found");
         }

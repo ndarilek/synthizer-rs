@@ -30,7 +30,7 @@ macro_rules! wrap {
 }
 
 #[derive(Clone, Debug)]
-struct Handle(syz_Handle);
+pub struct Handle(syz_Handle);
 
 impl Deref for Handle {
     type Target = syz_Handle;
@@ -210,11 +210,11 @@ impl Deref for Context {
     }
 }
 
-trait Generator {
+pub trait Generator {
     fn handle(&self) -> &Handle;
 }
 
-trait Source {
+pub trait Source {
     fn handle(&self) -> &Handle;
 
     fn add_generator(&self, generator: &impl Generator) -> Result<(), SynthizerError> {
