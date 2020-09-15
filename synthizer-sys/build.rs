@@ -36,6 +36,7 @@ fn main() -> Result<(), io::Error> {
     println!("cargo:rustc-link-lib=static=synthizer");
     let _ = bindgen::builder()
         .header("../synthizer/include/synthizer.h")
+        .header("../synthizer/include/synthizer_constants.h")
         .generate()
         .unwrap()
         .write_to_file(Path::new(&out_dir).join("synthizer_sys.rs"));

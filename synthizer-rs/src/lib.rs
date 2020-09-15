@@ -1,4 +1,4 @@
-use std::{ffi::CString, ops::Deref, ops::DerefMut, path::Path};
+use std::{ffi::CString, ops::Deref, ops::DerefMut, path::Path, ptr::null_mut};
 
 use log::Level;
 use synthizer_sys::*;
@@ -22,6 +22,142 @@ impl Deref for Handle {
 impl DerefMut for Handle {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
+    }
+}
+
+#[repr(i32)]
+enum Properties {
+    Azimuth = SYZ_PROPERTIES_SYZ_P_AZIMUTH,
+    Buffer = SYZ_PROPERTIES_SYZ_P_BUFFER,
+    ClosenessBoost = SYZ_PROPERTIES_SYZ_P_CLOSENESS_BOOST,
+    ClosenessBoostDistance = SYZ_PROPERTIES_SYZ_P_CLOSENESS_BOOST_DISTANCE,
+    DistanceMax = SYZ_PROPERTIES_SYZ_P_DISTANCE_MAX,
+    DistanceModel = SYZ_PROPERTIES_SYZ_P_DISTANCE_MODEL,
+    DistanceRef = SYZ_PROPERTIES_SYZ_P_DISTANCE_REF,
+    Elevation = SYZ_PROPERTIES_SYZ_P_ELEVATION,
+    Gain = SYZ_PROPERTIES_SYZ_P_GAIN,
+    PannerStrategy = SYZ_PROPERTIES_SYZ_P_PANNER_STRATEGY,
+    PanningScalar = SYZ_PROPERTIES_SYZ_P_PANNING_SCALAR,
+    Position = SYZ_PROPERTIES_SYZ_P_POSITION,
+    Orientation = SYZ_PROPERTIES_SYZ_P_ORIENTATION,
+    Rolloff = SYZ_PROPERTIES_SYZ_P_ROLLOFF,
+    Looping = SYZ_PROPERTIES_SYZ_P_LOOPING,
+    NoiseType = SYZ_PROPERTIES_SYZ_P_NOISE_TYPE,
+}
+
+impl Handle {
+    fn get_i(&self, property: i32) -> Result<*mut i32, SynthizerError> {
+        let out: *mut i32 = null_mut();
+        let v = unsafe { syz_getI(out, self.0, property) };
+        if v == 0 {
+            Ok(out)
+        } else {
+            Err(SynthizerError(v))
+        }
+    }
+
+    fn set_i(&self, property: i32, value: i32) -> Result<(), SynthizerError> {
+        let v = unsafe { syz_setI(self.0, property, value) };
+        if v == 0 {
+            Ok(())
+        } else {
+            Err(SynthizerError(v))
+        }
+    }
+
+    fn get_d(&self, property: i32) -> Result<*mut f64, SynthizerError> {
+        let out: *mut f64 = null_mut();
+        let v = unsafe { syz_getD(out, self.0, property) };
+        if v == 0 {
+            Ok(out)
+        } else {
+            Err(SynthizerError(v))
+        }
+    }
+
+    fn set_d(&self, property: i32, value: f64) -> Result<(), SynthizerError> {
+        let v = unsafe { syz_setD(self.0, property, value) };
+        if v == 0 {
+            Ok(())
+        } else {
+            Err(SynthizerError(v))
+        }
+    }
+
+    fn get_o(&self, property: i32) -> Result<Handle, SynthizerError> {
+        let out: *mut u64 = null_mut();
+        let v = unsafe { syz_getO(out, self.0, property) };
+        if v == 0 {
+            Ok(Handle(out as u64))
+        } else {
+            Err(SynthizerError(v))
+        }
+    }
+
+    fn set_o(&self, property: i32, value: Handle) -> Result<(), SynthizerError> {
+        let v = unsafe { syz_setO(self.0, property, value.0) };
+        if v == 0 {
+            Ok(())
+        } else {
+            Err(SynthizerError(v))
+        }
+    }
+
+    fn get_d3(&self, property: i32) -> Result<(*mut f64, *mut f64, *mut f64), SynthizerError> {
+        let x: *mut f64 = null_mut();
+        let y: *mut f64 = null_mut();
+        let z: *mut f64 = null_mut();
+        let v = unsafe { syz_getD3(x, y, z, self.0, property) };
+        if v == 0 {
+            Ok((x, y, z))
+        } else {
+            Err(SynthizerError(v))
+        }
+    }
+
+    fn set_d3(&self, property: i32, x: f64, y: f64, z: f64) -> Result<(), SynthizerError> {
+        let v = unsafe { syz_setD3(self.0, property, x, y, z) };
+        if v == 0 {
+            Ok(())
+        } else {
+            Err(SynthizerError(v))
+        }
+    }
+
+    fn get_d6(
+        &self,
+        property: i32,
+    ) -> Result<(*mut f64, *mut f64, *mut f64, *mut f64, *mut f64, *mut f64), SynthizerError> {
+        let x1: *mut f64 = null_mut();
+        let y1: *mut f64 = null_mut();
+        let z1: *mut f64 = null_mut();
+        let x2: *mut f64 = null_mut();
+        let y2: *mut f64 = null_mut();
+        let z2: *mut f64 = null_mut();
+        let v = unsafe { syz_getD6(x1, y1, z1, x2, y2, z2, self.0, property) };
+        if v == 0 {
+            Ok((x1, y1, z1, x2, y2, z2))
+        } else {
+            Err(SynthizerError(v))
+        }
+    }
+
+    fn set_d6(
+        &self,
+        property: i32,
+        x1: f64,
+        y1: f64,
+        z1: f64,
+        x2: f64,
+        y2: f64,
+        z2: f64,
+    ) -> Result<(), SynthizerError> {
+        let v = unsafe { syz_setD6(self.0, property, x1, y1, z1, x2, y2, z2) };
+        if v == 0 {
+            Ok(())
+        } else {
+            Err(SynthizerError(v))
+        }
     }
 }
 
@@ -50,7 +186,7 @@ pub fn configure_logging_backend(backend: LoggingBackend) -> Result<(), Synthize
     let backend = match backend {
         LoggingBackend::Stderr => SYZ_LOGGING_BACKEND_SYZ_LOGGING_BACKEND_STDERR,
     };
-    let param = std::ptr::null_mut();
+    let param = null_mut();
     wrap(unsafe { syz_configureLoggingBackend(backend, param) })
 }
 
