@@ -241,6 +241,28 @@ impl Deref for Context {
     }
 }
 
+macro_rules! make_superclass {
+    ($superclass:ident) => {
+        trait $superclass {
+            fn handle(&self) -> &Handle;
+        }
+    };
+}
+
+macro_rules! make_subclass {
+    ($subclass:ident, $superclass:ty) => {
+        impl $superclass for $subclass {
+            fn handle(&self) -> &Handle {
+                &self.0
+            }
+        }
+    };
+}
+
+make_superclass!(Generator);
+
+make_superclass!(Source);
+
 pub enum Protocol {
     File,
 }
@@ -277,6 +299,8 @@ impl StreamingGenerator {
         }
     }
 }
+
+make_subclass!(StreamingGenerator, Generator);
 
 #[derive(Clone, Debug)]
 pub struct Synthizer;
