@@ -8,6 +8,25 @@ use thiserror::Error;
 #[error("Synthizer error: {0}")]
 pub struct SynthizerError(syz_ErrorCode);
 
+macro_rules! wrap {
+    ($call:expr) => {{
+        let v = $call;
+        if v == 0 {
+            Ok(())
+        } else {
+            Err(SynthizerError(v))
+        }
+    }};
+    ($call:expr, $rv:expr) => {{
+        let v = $call;
+        if v == 0 {
+            Ok($rv)
+        } else {
+            Err(SynthizerError(v))
+        }
+    }};
+}
+
 #[derive(Clone, Debug)]
 struct Handle(syz_Handle);
 
@@ -48,80 +67,43 @@ enum Properties {
 impl Handle {
     fn get_i(&self, property: i32) -> Result<*mut i32, SynthizerError> {
         let out: *mut i32 = null_mut();
-        let v = unsafe { syz_getI(out, self.0, property) };
-        if v == 0 {
-            Ok(out)
-        } else {
-            Err(SynthizerError(v))
-        }
+        wrap!(unsafe { syz_getI(out, self.0, property) }, out)
     }
 
     fn set_i(&self, property: i32, value: i32) -> Result<(), SynthizerError> {
-        let v = unsafe { syz_setI(self.0, property, value) };
-        if v == 0 {
-            Ok(())
-        } else {
-            Err(SynthizerError(v))
-        }
+        wrap!(unsafe { syz_setI(self.0, property, value) })
     }
 
     fn get_d(&self, property: i32) -> Result<*mut f64, SynthizerError> {
         let out: *mut f64 = null_mut();
-        let v = unsafe { syz_getD(out, self.0, property) };
-        if v == 0 {
-            Ok(out)
-        } else {
-            Err(SynthizerError(v))
-        }
+        wrap!(unsafe { syz_getD(out, self.0, property) }, out)
     }
 
     fn set_d(&self, property: i32, value: f64) -> Result<(), SynthizerError> {
-        let v = unsafe { syz_setD(self.0, property, value) };
-        if v == 0 {
-            Ok(())
-        } else {
-            Err(SynthizerError(v))
-        }
+        wrap!(unsafe { syz_setD(self.0, property, value) })
     }
 
     fn get_o(&self, property: i32) -> Result<Handle, SynthizerError> {
         let out: *mut u64 = null_mut();
-        let v = unsafe { syz_getO(out, self.0, property) };
-        if v == 0 {
-            Ok(Handle(out as u64))
-        } else {
-            Err(SynthizerError(v))
-        }
+        wrap!(
+            unsafe { syz_getO(out, self.0, property) },
+            Handle(out as u64)
+        )
     }
 
     fn set_o(&self, property: i32, value: Handle) -> Result<(), SynthizerError> {
-        let v = unsafe { syz_setO(self.0, property, value.0) };
-        if v == 0 {
-            Ok(())
-        } else {
-            Err(SynthizerError(v))
-        }
+        wrap!(unsafe { syz_setO(self.0, property, value.0) })
     }
 
     fn get_d3(&self, property: i32) -> Result<(*mut f64, *mut f64, *mut f64), SynthizerError> {
         let x: *mut f64 = null_mut();
         let y: *mut f64 = null_mut();
         let z: *mut f64 = null_mut();
-        let v = unsafe { syz_getD3(x, y, z, self.0, property) };
-        if v == 0 {
-            Ok((x, y, z))
-        } else {
-            Err(SynthizerError(v))
-        }
+        wrap!(unsafe { syz_getD3(x, y, z, self.0, property) }, (x, y, z))
     }
 
     fn set_d3(&self, property: i32, x: f64, y: f64, z: f64) -> Result<(), SynthizerError> {
-        let v = unsafe { syz_setD3(self.0, property, x, y, z) };
-        if v == 0 {
-            Ok(())
-        } else {
-            Err(SynthizerError(v))
-        }
+        wrap!(unsafe { syz_setD3(self.0, property, x, y, z) })
     }
 
     fn get_d6(
@@ -134,12 +116,10 @@ impl Handle {
         let x2: *mut f64 = null_mut();
         let y2: *mut f64 = null_mut();
         let z2: *mut f64 = null_mut();
-        let v = unsafe { syz_getD6(x1, y1, z1, x2, y2, z2, self.0, property) };
-        if v == 0 {
-            Ok((x1, y1, z1, x2, y2, z2))
-        } else {
-            Err(SynthizerError(v))
-        }
+        wrap!(
+            unsafe { syz_getD6(x1, y1, z1, x2, y2, z2, self.0, property) },
+            (x1, y1, z1, x2, y2, z2)
+        )
     }
 
     fn set_d6(
@@ -152,20 +132,7 @@ impl Handle {
         y2: f64,
         z2: f64,
     ) -> Result<(), SynthizerError> {
-        let v = unsafe { syz_setD6(self.0, property, x1, y1, z1, x2, y2, z2) };
-        if v == 0 {
-            Ok(())
-        } else {
-            Err(SynthizerError(v))
-        }
-    }
-}
-
-fn wrap(v: i32) -> Result<(), SynthizerError> {
-    if v == 0 {
-        Ok(())
-    } else {
-        Err(SynthizerError(v))
+        wrap!(unsafe { syz_setD6(self.0, property, x1, y1, z1, x2, y2, z2) })
     }
 }
 
@@ -187,7 +154,7 @@ pub fn configure_logging_backend(backend: LoggingBackend) -> Result<(), Synthize
         LoggingBackend::Stderr => SYZ_LOGGING_BACKEND_SYZ_LOGGING_BACKEND_STDERR,
     };
     let param = null_mut();
-    wrap(unsafe { syz_configureLoggingBackend(backend, param) })
+    wrap!(unsafe { syz_configureLoggingBackend(backend, param) })
 }
 
 pub fn set_log_level(level: Level) {
@@ -202,11 +169,11 @@ pub fn set_log_level(level: Level) {
 }
 
 fn initialize() -> Result<(), SynthizerError> {
-    wrap(unsafe { syz_initialize() })
+    wrap!(unsafe { syz_initialize() })
 }
 
 fn shutdown() -> Result<(), SynthizerError> {
-    wrap(unsafe { syz_shutdown() })
+    wrap!(unsafe { syz_shutdown() })
 }
 
 #[derive(Clone, Debug)]
@@ -215,12 +182,7 @@ pub struct Context(Handle);
 impl Context {
     fn new() -> Result<Self, SynthizerError> {
         let mut handle = Handle(0);
-        let v = unsafe { syz_createContext(&mut *handle) };
-        if v == 0 {
-            Ok(Self(handle))
-        } else {
-            Err(SynthizerError(v))
-        }
+        wrap!(unsafe { syz_createContext(&mut *handle) }, Self(handle))
     }
 
     pub fn new_streaming_generator<S: Into<String>>(
@@ -289,14 +251,12 @@ impl StreamingGenerator {
         let options = options.into();
         let options = CString::new(options.as_bytes()).expect("Unable to create C string");
         let options = options.as_ptr() as *const i8;
-        let v = unsafe {
-            syz_createStreamingGenerator(&mut *handle, **context, protocol, path, options)
-        };
-        if v == 0 {
-            Ok(Self(handle))
-        } else {
-            Err(SynthizerError(v))
-        }
+        wrap!(
+            unsafe {
+                syz_createStreamingGenerator(&mut *handle, **context, protocol, path, options)
+            },
+            Self(handle)
+        )
     }
 }
 
