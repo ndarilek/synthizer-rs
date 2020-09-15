@@ -1,6 +1,6 @@
 [package]
 name = "synthizer-sys"
-version = "0.1.0"
+version = "0.7.1"
 authors = ["Nolan Darilek <nolan@thewordnerd.info>"]
 edition = "2018"
 
