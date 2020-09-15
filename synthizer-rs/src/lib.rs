@@ -221,6 +221,10 @@ trait Source {
     fn remove_generator(&self, generator: &impl Generator) -> Result<(), SynthizerError> {
         wrap!(unsafe { syz_sourceRemoveGenerator(**self.handle(), **generator.handle()) })
     }
+
+    fn get_gain(&self) -> i32 {
+        self.handle().get_i(Properties::Gain)
+    }
 }
 
 macro_rules! make_subclass {
