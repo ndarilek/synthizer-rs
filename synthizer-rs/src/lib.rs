@@ -261,6 +261,10 @@ impl Context {
         StreamingGenerator::new(&self, protocol, path, options)
     }
 
+    pub fn new_buffer_generator(&mut self) -> Result<BufferGenerator, SynthizerError> {
+        BufferGenerator::new(&self)
+    }
+
     pub fn new_direct_source(&mut self) -> Result<DirectSource, SynthizerError> {
         DirectSource::new(&self)
     }
@@ -274,30 +278,6 @@ impl Deref for Context {
     }
 }
 
-pub trait Generator {
-    fn handle(&self) -> &Handle;
-}
-
-pub trait Source {
-    fn handle(&self) -> &Handle;
-
-    fn add_generator(&self, generator: &impl Generator) -> Result<(), SynthizerError> {
-        wrap!(unsafe { syz_sourceAddGenerator(**self.handle(), **generator.handle()) })
-    }
-
-    fn remove_generator(&self, generator: &impl Generator) -> Result<(), SynthizerError> {
-        wrap!(unsafe { syz_sourceRemoveGenerator(**self.handle(), **generator.handle()) })
-    }
-
-    fn get_gain(&self) -> Result<i32, SynthizerError> {
-        self.handle().get_i(Property::Gain.to_i32().unwrap())
-    }
-
-    fn set_gain(&self, value: i32) -> Result<(), SynthizerError> {
-        self.handle().set_i(Property::Gain.to_i32().unwrap(), value)
-    }
-}
-
 macro_rules! make_subclass {
     ($subclass:ident, $superclass:ty) => {
         impl $superclass for $subclass {
@@ -306,6 +286,10 @@ macro_rules! make_subclass {
             }
         }
     };
+}
+
+pub trait Generator {
+    fn handle(&self) -> &Handle;
 }
 
 #[derive(Clone, Debug)]
@@ -340,6 +324,71 @@ impl StreamingGenerator {
 }
 
 make_subclass!(StreamingGenerator, Generator);
+
+pub struct BufferGenerator(Handle);
+
+impl BufferGenerator {
+    fn new(context: &Context) -> Result<Self, SynthizerError> {
+        let mut handle = Handle(0);
+        wrap!(
+            unsafe { syz_createBufferGenerator(&mut *handle, **context) },
+            Self(handle)
+        )
+    }
+
+    pub fn get_buffer(&self) -> Result<Buffer, SynthizerError> {
+        let handle = self.handle().get_o(Property::Buffer.to_i32().unwrap())?;
+        Ok(Buffer(handle))
+    }
+
+    pub fn set_buffer(&self, buffer: Buffer) -> Result<(), SynthizerError> {
+        self.handle()
+            .set_o(Property::Buffer.to_i32().unwrap(), buffer.0)
+    }
+
+    pub fn get_position(&self) -> Result<f64, SynthizerError> {
+        let out = self.handle().get_d(Property::Position.to_i32().unwrap())?;
+        let out = unsafe { out.as_ref() };
+        let out = out.cloned();
+        Ok(out.unwrap())
+    }
+
+    pub fn set_position(&self, v: f64) -> Result<(), SynthizerError> {
+        self.handle().set_d(Property::Position.to_i32().unwrap(), v)
+    }
+
+    pub fn get_looping(&self) -> Result<bool, SynthizerError> {
+        let v = self.handle().get_i(Property::Looping.to_i32().unwrap())?;
+        Ok(v == 1)
+    }
+
+    pub fn set_looping(&self, v: bool) -> Result<(), SynthizerError> {
+        let v = if v { 1 } else { 0 };
+        self.handle().set_i(Property::Looping.to_i32().unwrap(), v)
+    }
+}
+
+make_subclass!(BufferGenerator, Generator);
+
+pub trait Source {
+    fn handle(&self) -> &Handle;
+
+    fn add_generator(&self, generator: &impl Generator) -> Result<(), SynthizerError> {
+        wrap!(unsafe { syz_sourceAddGenerator(**self.handle(), **generator.handle()) })
+    }
+
+    fn remove_generator(&self, generator: &impl Generator) -> Result<(), SynthizerError> {
+        wrap!(unsafe { syz_sourceRemoveGenerator(**self.handle(), **generator.handle()) })
+    }
+
+    fn get_gain(&self) -> Result<i32, SynthizerError> {
+        self.handle().get_i(Property::Gain.to_i32().unwrap())
+    }
+
+    fn set_gain(&self, value: i32) -> Result<(), SynthizerError> {
+        self.handle().set_i(Property::Gain.to_i32().unwrap(), value)
+    }
+}
 
 pub struct DirectSource(Handle);
 
