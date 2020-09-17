@@ -14,7 +14,7 @@ jobs:
         with:
           submodules: recursive
       - run: |
-          choco install -y llvm
+          choco install -y llvm ninja
           rustup update
           cargo build --release
 
@@ -29,7 +29,7 @@ jobs:
         with:
           submodules: recursive
       - run: |
-          choco install -y llvm
+          choco install -y llvm ninja
           rustup update
           cargo login $CARGO_TOKEN
           cd synthizer-sys
