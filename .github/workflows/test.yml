@@ -18,8 +18,4 @@ jobs:
           rustup component add clippy
           cargo fmt --all -- --check
           cargo clippy --all-targets --all-features
-          echo Find me.
-          cmake --version
-          clang++ --version
-          clang --version
           cargo check
