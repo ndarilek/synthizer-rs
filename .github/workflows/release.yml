@@ -11,6 +11,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - run: |
           choco install -y llvm
           rustup update
@@ -24,6 +26,8 @@ jobs:
       CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - run: |
           choco install -y llvm
           rustup update
@@ -40,6 +44,8 @@ jobs:
       CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - run: |
           rustup update
           cargo login $CARGO_TOKEN
