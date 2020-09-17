@@ -3,6 +3,7 @@ use std::{ffi::CString, ops::Deref, ops::DerefMut, path::Path, ptr::null_mut, ti
 use enum_primitive_derive::Primitive;
 use log::Level;
 use num_traits::ToPrimitive;
+use paste::paste;
 use synthizer_sys::*;
 use thiserror::Error;
 
@@ -211,6 +212,51 @@ unsafe impl Send for Handle {}
 
 unsafe impl Sync for Handle {}
 
+macro_rules! i {
+    ($name:ident, $property:path) => {
+        paste! {
+            pub fn [<get_ $name>](&self) -> Result<i32, SynthizerError> {
+                self.handle().get_i($property.to_i32().unwrap())
+            }
+
+            pub fn [<set_ $name>](&self, value: i32) -> Result<(), SynthizerError> {
+                self.handle().set_i($property.to_i32().unwrap(), value)
+            }
+        }
+    };
+}
+
+macro_rules! ti {
+    ($name:ident, $property:path) => {
+        paste! {
+            fn [<get_ $name>](&self) -> Result<i32, SynthizerError> {
+                self.handle().get_i($property.to_i32().unwrap())
+            }
+
+            fn [<set_ $name>](&self, value: i32) -> Result<(), SynthizerError> {
+                self.handle().set_i($property.to_i32().unwrap(), value)
+            }
+        }
+    };
+}
+
+macro_rules! d {
+    ($name:ident, $property:path) => {
+        paste! {
+            pub fn [<get_ $name>](&self) -> Result<f64, SynthizerError> {
+        let out = self.handle().get_d($property.to_i32().unwrap())?;
+        let out = unsafe { out.as_ref() };
+        let out = out.cloned();
+        Ok(out.unwrap())
+            }
+
+            pub fn [<set_ $name>](&self, value: f64) -> Result<(), SynthizerError> {
+                self.handle().set_d($property.to_i32().unwrap(), value)
+            }
+        }
+    };
+}
+
 pub enum Protocol {
     File,
 }
@@ -399,16 +445,7 @@ impl BufferGenerator {
             .set_o(Property::Buffer.to_i32().unwrap(), buffer.0)
     }
 
-    pub fn get_position(&self) -> Result<f64, SynthizerError> {
-        let out = self.handle().get_d(Property::Position.to_i32().unwrap())?;
-        let out = unsafe { out.as_ref() };
-        let out = out.cloned();
-        Ok(out.unwrap())
-    }
-
-    pub fn set_position(&self, v: f64) -> Result<(), SynthizerError> {
-        self.handle().set_d(Property::Position.to_i32().unwrap(), v)
-    }
+    d!(position, Property::Position);
 
     pub fn get_looping(&self) -> Result<bool, SynthizerError> {
         let v = self.handle().get_i(Property::Looping.to_i32().unwrap())?;
@@ -439,14 +476,7 @@ impl NoiseGenerator {
         )
     }
 
-    pub fn get_noise_type(&self) -> Result<i32, SynthizerError> {
-        self.handle().get_i(Property::NoiseType.to_i32().unwrap())
-    }
-
-    pub fn set_noise_type(&self, value: i32) -> Result<(), SynthizerError> {
-        self.handle()
-            .set_i(Property::NoiseType.to_i32().unwrap(), value)
-    }
+    i!(noise_type, Property::NoiseType);
 }
 
 make_subclass!(NoiseGenerator, Generator);
@@ -466,13 +496,7 @@ pub trait Source {
         wrap!(unsafe { syz_sourceRemoveGenerator(**self.handle(), **generator.handle()) })
     }
 
-    fn get_gain(&self) -> Result<i32, SynthizerError> {
-        self.handle().get_i(Property::Gain.to_i32().unwrap())
-    }
-
-    fn set_gain(&self, value: i32) -> Result<(), SynthizerError> {
-        self.handle().set_i(Property::Gain.to_i32().unwrap(), value)
-    }
+    ti!(gain, Property::Gain);
 }
 
 #[derive(Clone, Debug)]
@@ -495,15 +519,7 @@ unsafe impl Send for DirectSource {}
 unsafe impl Sync for DirectSource {}
 
 trait SpatializedSource: Source {
-    fn get_panner_strategy(&self) -> Result<i32, SynthizerError> {
-        self.handle()
-            .get_i(Property::PannerStrategy.to_i32().unwrap())
-    }
-
-    fn set_panner_strategy(&self, value: i32) -> Result<(), SynthizerError> {
-        self.handle()
-            .set_i(Property::PannerStrategy.to_i32().unwrap(), value)
-    }
+    ti!(panner_strategy, Property::PannerStrategy);
 }
 
 #[derive(Clone, Debug)]
@@ -518,42 +534,9 @@ impl PannedSource {
         )
     }
 
-    pub fn get_azimuth(&self) -> Result<f64, SynthizerError> {
-        let out = self.handle().get_d(Property::Azimuth.to_i32().unwrap())?;
-        let out = unsafe { out.as_ref() };
-        let out = out.cloned();
-        Ok(out.unwrap())
-    }
-
-    pub fn set_azimuth(&self, v: f64) -> Result<(), SynthizerError> {
-        self.handle().set_d(Property::Azimuth.to_i32().unwrap(), v)
-    }
-
-    pub fn get_elevation(&self) -> Result<f64, SynthizerError> {
-        let out = self.handle().get_d(Property::Elevation.to_i32().unwrap())?;
-        let out = unsafe { out.as_ref() };
-        let out = out.cloned();
-        Ok(out.unwrap())
-    }
-
-    pub fn set_elevation(&self, v: f64) -> Result<(), SynthizerError> {
-        self.handle()
-            .set_d(Property::Elevation.to_i32().unwrap(), v)
-    }
-
-    pub fn get_panning_scalar(&self) -> Result<f64, SynthizerError> {
-        let out = self
-            .handle()
-            .get_d(Property::PanningScalar.to_i32().unwrap())?;
-        let out = unsafe { out.as_ref() };
-        let out = out.cloned();
-        Ok(out.unwrap())
-    }
-
-    pub fn set_panning_scalar(&self, v: f64) -> Result<(), SynthizerError> {
-        self.handle()
-            .set_d(Property::PanningScalar.to_i32().unwrap(), v)
-    }
+    d!(azimuth, Property::Azimuth);
+    d!(elevation, Property::Elevation);
+    d!(panning_scalar, Property::PanningScalar);
 }
 
 make_subclass!(PannedSource, Source);
@@ -638,86 +621,12 @@ impl Source3D {
         )
     }
 
-    pub fn get_distance_model(&self) -> Result<f64, SynthizerError> {
-        let out = self
-            .handle()
-            .get_d(Property::DistanceModel.to_i32().unwrap())?;
-        let out = unsafe { out.as_ref() };
-        let out = out.cloned();
-        Ok(out.unwrap())
-    }
-
-    pub fn set_distance_model(&self, v: f64) -> Result<(), SynthizerError> {
-        self.handle()
-            .set_d(Property::DistanceModel.to_i32().unwrap(), v)
-    }
-
-    pub fn get_distance_ref(&self) -> Result<f64, SynthizerError> {
-        let out = self
-            .handle()
-            .get_d(Property::DistanceRef.to_i32().unwrap())?;
-        let out = unsafe { out.as_ref() };
-        let out = out.cloned();
-        Ok(out.unwrap())
-    }
-
-    pub fn set_distance_ref(&self, v: f64) -> Result<(), SynthizerError> {
-        self.handle()
-            .set_d(Property::DistanceRef.to_i32().unwrap(), v)
-    }
-
-    pub fn get_distance_max(&self) -> Result<f64, SynthizerError> {
-        let out = self
-            .handle()
-            .get_d(Property::DistanceMax.to_i32().unwrap())?;
-        let out = unsafe { out.as_ref() };
-        let out = out.cloned();
-        Ok(out.unwrap())
-    }
-
-    pub fn set_distance_max(&self, v: f64) -> Result<(), SynthizerError> {
-        self.handle()
-            .set_d(Property::DistanceMax.to_i32().unwrap(), v)
-    }
-
-    pub fn get_rolloff(&self) -> Result<f64, SynthizerError> {
-        let out = self.handle().get_d(Property::Rolloff.to_i32().unwrap())?;
-        let out = unsafe { out.as_ref() };
-        let out = out.cloned();
-        Ok(out.unwrap())
-    }
-
-    pub fn set_rolloff(&self, v: f64) -> Result<(), SynthizerError> {
-        self.handle().set_d(Property::Rolloff.to_i32().unwrap(), v)
-    }
-
-    pub fn get_closeness_boost(&self) -> Result<f64, SynthizerError> {
-        let out = self
-            .handle()
-            .get_d(Property::ClosenessBoost.to_i32().unwrap())?;
-        let out = unsafe { out.as_ref() };
-        let out = out.cloned();
-        Ok(out.unwrap())
-    }
-
-    pub fn set_closeness_boost(&self, v: f64) -> Result<(), SynthizerError> {
-        self.handle()
-            .set_d(Property::ClosenessBoost.to_i32().unwrap(), v)
-    }
-
-    pub fn get_closeness_boost_distance(&self) -> Result<f64, SynthizerError> {
-        let out = self
-            .handle()
-            .get_d(Property::ClosenessBoostDistance.to_i32().unwrap())?;
-        let out = unsafe { out.as_ref() };
-        let out = out.cloned();
-        Ok(out.unwrap())
-    }
-
-    pub fn set_closeness_boost_distance(&self, v: f64) -> Result<(), SynthizerError> {
-        self.handle()
-            .set_d(Property::ClosenessBoostDistance.to_i32().unwrap(), v)
-    }
+    d!(distance_model, Property::DistanceModel);
+    d!(distance_ref, Property::DistanceRef);
+    d!(distance_max, Property::DistanceMax);
+    d!(rolloff, Property::Rolloff);
+    d!(closeness_boost, Property::ClosenessBoost);
+    d!(closeness_boost_distance, Property::ClosenessBoostDistance);
 }
 
 make_subclass!(Source3D, Source);
