@@ -116,6 +116,15 @@ pub enum DistanceModel {
     Count = SYZ_DISTANCE_MODEL_SYZ_DISTANCE_MODEL_COUNT,
 }
 
+#[derive(Primitive)]
+#[repr(i32)]
+pub enum NoiseType {
+    Uniform = SYZ_NOISE_TYPE_SYZ_NOISE_TYPE_UNIFORM,
+    VM = SYZ_NOISE_TYPE_SYZ_NOISE_TYPE_VM,
+    FilteredBrown = SYZ_NOISE_TYPE_SYZ_NOISE_TYPE_FILTERED_BROWN,
+    Count = SYZ_NOISE_TYPE_SYZ_NOISE_TYPE_COUNT,
+}
+
 impl Handle {
     fn get_i(&self, property: i32) -> Result<i32, SynthizerError> {
         let out: *mut i32 = null_mut();
@@ -288,6 +297,10 @@ impl Context {
         BufferGenerator::new(&self)
     }
 
+    pub fn new_noise_generator(&mut self, channels: u32) -> Result<NoiseGenerator, SynthizerError> {
+        NoiseGenerator::new(&self, channels)
+    }
+
     pub fn new_direct_source(&mut self) -> Result<DirectSource, SynthizerError> {
         DirectSource::new(&self)
     }
@@ -413,6 +426,34 @@ make_subclass!(BufferGenerator, Generator);
 unsafe impl Send for BufferGenerator {}
 
 unsafe impl Sync for BufferGenerator {}
+
+#[derive(Clone, Debug)]
+pub struct NoiseGenerator(Handle);
+
+impl NoiseGenerator {
+    fn new(context: &Context, channels: u32) -> Result<Self, SynthizerError> {
+        let mut handle = Handle(0);
+        wrap!(
+            unsafe { syz_createNoiseGenerator(&mut *handle, **context, channels) },
+            Self(handle)
+        )
+    }
+
+    pub fn get_noise_type(&self) -> Result<i32, SynthizerError> {
+        self.handle().get_i(Property::NoiseType.to_i32().unwrap())
+    }
+
+    pub fn set_noise_type(&self, value: i32) -> Result<(), SynthizerError> {
+        self.handle()
+            .set_i(Property::NoiseType.to_i32().unwrap(), value)
+    }
+}
+
+make_subclass!(NoiseGenerator, Generator);
+
+unsafe impl Send for NoiseGenerator {}
+
+unsafe impl Sync for NoiseGenerator {}
 
 pub trait Source {
     fn handle(&self) -> &Handle;
