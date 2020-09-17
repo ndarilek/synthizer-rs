@@ -174,6 +174,7 @@ impl Handle {
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn set_d6(
         &self,
         property: i32,
