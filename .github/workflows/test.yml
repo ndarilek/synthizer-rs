@@ -8,15 +8,15 @@ jobs:
   build_windows:
     name: Build Windows
     runs-on: windows-latest
-    env:
-      CC: C:\ProgramData\chocolatey\bin\clang.exe
-      CXX: C:\ProgramData\chocolatey\bin\clang++.exe
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
       - run: |
-          choco install -y llvm cmake ninja
+          Set-ExecutionPolicy RemoteSigned -scope CurrentUser
+          Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+          scoop update
+          scoop install llvm ninja
           rustup update
           rustup component add clippy
           cargo fmt --all -- --check
