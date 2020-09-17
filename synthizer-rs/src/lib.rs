@@ -6,7 +6,7 @@ use num_traits::ToPrimitive;
 use synthizer_sys::*;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Clone, Debug, Error)]
 #[error("Synthizer error: {0}")]
 pub struct SynthizerError(syz_ErrorCode);
 
@@ -364,6 +364,7 @@ unsafe impl Send for StreamingGenerator {}
 
 unsafe impl Sync for StreamingGenerator {}
 
+#[derive(Clone, Debug)]
 pub struct BufferGenerator(Handle);
 
 impl BufferGenerator {
