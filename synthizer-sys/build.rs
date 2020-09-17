@@ -6,7 +6,7 @@ use std::process::Command;
 
 fn main() -> Result<(), io::Error> {
     let out_dir = env::var("OUT_DIR").unwrap();
-    let executable = env::var("CMAKE").unwrap_or("cmake".to_owned());
+    let executable = env::var("CMAKE").unwrap_or_else(|_| "cmake".to_owned());
     let mut cmd = Command::new(&executable);
     cmd.current_dir(&out_dir);
     let mut lib_dir = env::current_dir()?;
