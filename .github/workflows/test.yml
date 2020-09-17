@@ -8,6 +8,8 @@ jobs:
   build_windows:
     name: Build Windows
     runs-on: windows-latest
+    env:
+      LIBCLANG_PATH: ~\scoop\apps\llvm\current\bin
     steps:
       - uses: actions/checkout@v2
         with:
