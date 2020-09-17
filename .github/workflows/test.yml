@@ -8,6 +8,9 @@ jobs:
   build_windows:
     name: Build Windows
     runs-on: windows-latest
+    env:
+      CC: C:\ProgramData\chocolatey\bin\clang.exe
+      CXX: C:\ProgramData\chocolatey\bin\clang++.exe
     steps:
       - uses: actions/checkout@v2
         with:
