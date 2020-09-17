@@ -100,10 +100,20 @@ enum Property {
 
 #[derive(Primitive)]
 #[repr(i32)]
-enum PannerStrategy {
+pub enum PannerStrategy {
     HRTF = SYZ_PANNER_STRATEGY_SYZ_PANNER_STRATEGY_HRTF,
     Stereo = SYZ_PANNER_STRATEGY_SYZ_PANNER_STRATEGY_STEREO,
     Count = SYZ_PANNER_STRATEGY_SYZ_PANNER_STRATEGY_COUNT,
+}
+
+#[derive(Primitive)]
+#[repr(i32)]
+pub enum DistanceModel {
+    None = SYZ_DISTANCE_MODEL_SYZ_DISTANCE_MODEL_NONE,
+    Linear = SYZ_DISTANCE_MODEL_SYZ_DISTANCE_MODEL_LINEAR,
+    Exponential = SYZ_DISTANCE_MODEL_SYZ_DISTANCE_MODEL_EXPONENTIAL,
+    Inverse = SYZ_DISTANCE_MODEL_SYZ_DISTANCE_MODEL_INVERSE,
+    Count = SYZ_DISTANCE_MODEL_SYZ_DISTANCE_MODEL_COUNT,
 }
 
 impl Handle {
@@ -283,6 +293,10 @@ impl Context {
 
     pub fn new_panned_source(&mut self) -> Result<PannedSource, SynthizerError> {
         PannedSource::new(&self)
+    }
+
+    pub fn new_source3d(&mut self) -> Result<Source3D, SynthizerError> {
+        Source3D::new(&self)
     }
 }
 
@@ -506,6 +520,170 @@ impl SpatializedSource for PannedSource {}
 unsafe impl Send for PannedSource {}
 
 unsafe impl Sync for PannedSource {}
+
+#[derive(Clone, Debug)]
+pub struct Source3D(Handle);
+
+impl Source3D {
+    fn new(context: &Context) -> Result<Self, SynthizerError> {
+        let mut handle = Handle(0);
+        wrap!(
+            unsafe { syz_createSource3D(&mut *handle, **context) },
+            Self(handle)
+        )
+    }
+
+    pub fn get_position(&self) -> Result<(f64, f64, f64), SynthizerError> {
+        let (x, y, z) = self.handle().get_d3(Property::Position.to_i32().unwrap())?;
+        let x = unsafe { x.as_ref() };
+        let x = x.cloned();
+        let y = unsafe { y.as_ref() };
+        let y = y.cloned();
+        let z = unsafe { z.as_ref() };
+        let z = z.cloned();
+        Ok((x.unwrap(), y.unwrap(), z.unwrap()))
+    }
+
+    pub fn set_position(&self, x: f64, y: f64, z: f64) -> Result<(), SynthizerError> {
+        self.handle()
+            .set_d3(Property::Position.to_i32().unwrap(), x, y, z)
+    }
+
+    pub fn get_orientation(&self) -> Result<(f64, f64, f64, f64, f64, f64), SynthizerError> {
+        let (x1, y1, z1, x2, y2, z2) = self
+            .handle()
+            .get_d6(Property::Orientation.to_i32().unwrap())?;
+        let x1 = unsafe { x1.as_ref() };
+        let x1 = x1.cloned();
+        let y1 = unsafe { y1.as_ref() };
+        let y1 = y1.cloned();
+        let z1 = unsafe { z1.as_ref() };
+        let z1 = z1.cloned();
+        let x2 = unsafe { x2.as_ref() };
+        let x2 = x2.cloned();
+        let y2 = unsafe { y2.as_ref() };
+        let y2 = y2.cloned();
+        let z2 = unsafe { z2.as_ref() };
+        let z2 = z2.cloned();
+        Ok((
+            x1.unwrap(),
+            y1.unwrap(),
+            z1.unwrap(),
+            x2.unwrap(),
+            y2.unwrap(),
+            z2.unwrap(),
+        ))
+    }
+
+    pub fn set_orientation(
+        &self,
+        x1: f64,
+        y1: f64,
+        z1: f64,
+        x2: f64,
+        y2: f64,
+        z2: f64,
+    ) -> Result<(), SynthizerError> {
+        self.handle().set_d6(
+            Property::Orientation.to_i32().unwrap(),
+            x1,
+            y1,
+            z1,
+            x2,
+            y2,
+            z2,
+        )
+    }
+
+    pub fn get_distance_model(&self) -> Result<f64, SynthizerError> {
+        let out = self
+            .handle()
+            .get_d(Property::DistanceModel.to_i32().unwrap())?;
+        let out = unsafe { out.as_ref() };
+        let out = out.cloned();
+        Ok(out.unwrap())
+    }
+
+    pub fn set_distance_model(&self, v: f64) -> Result<(), SynthizerError> {
+        self.handle()
+            .set_d(Property::DistanceModel.to_i32().unwrap(), v)
+    }
+
+    pub fn get_distance_ref(&self) -> Result<f64, SynthizerError> {
+        let out = self
+            .handle()
+            .get_d(Property::DistanceRef.to_i32().unwrap())?;
+        let out = unsafe { out.as_ref() };
+        let out = out.cloned();
+        Ok(out.unwrap())
+    }
+
+    pub fn set_distance_ref(&self, v: f64) -> Result<(), SynthizerError> {
+        self.handle()
+            .set_d(Property::DistanceRef.to_i32().unwrap(), v)
+    }
+
+    pub fn get_distance_max(&self) -> Result<f64, SynthizerError> {
+        let out = self
+            .handle()
+            .get_d(Property::DistanceMax.to_i32().unwrap())?;
+        let out = unsafe { out.as_ref() };
+        let out = out.cloned();
+        Ok(out.unwrap())
+    }
+
+    pub fn set_distance_max(&self, v: f64) -> Result<(), SynthizerError> {
+        self.handle()
+            .set_d(Property::DistanceMax.to_i32().unwrap(), v)
+    }
+
+    pub fn get_rolloff(&self) -> Result<f64, SynthizerError> {
+        let out = self.handle().get_d(Property::Rolloff.to_i32().unwrap())?;
+        let out = unsafe { out.as_ref() };
+        let out = out.cloned();
+        Ok(out.unwrap())
+    }
+
+    pub fn set_rolloff(&self, v: f64) -> Result<(), SynthizerError> {
+        self.handle().set_d(Property::Rolloff.to_i32().unwrap(), v)
+    }
+
+    pub fn get_closeness_boost(&self) -> Result<f64, SynthizerError> {
+        let out = self
+            .handle()
+            .get_d(Property::ClosenessBoost.to_i32().unwrap())?;
+        let out = unsafe { out.as_ref() };
+        let out = out.cloned();
+        Ok(out.unwrap())
+    }
+
+    pub fn set_closeness_boost(&self, v: f64) -> Result<(), SynthizerError> {
+        self.handle()
+            .set_d(Property::ClosenessBoost.to_i32().unwrap(), v)
+    }
+
+    pub fn get_closeness_boost_distance(&self) -> Result<f64, SynthizerError> {
+        let out = self
+            .handle()
+            .get_d(Property::ClosenessBoostDistance.to_i32().unwrap())?;
+        let out = unsafe { out.as_ref() };
+        let out = out.cloned();
+        Ok(out.unwrap())
+    }
+
+    pub fn set_closeness_boost_distance(&self, v: f64) -> Result<(), SynthizerError> {
+        self.handle()
+            .set_d(Property::ClosenessBoostDistance.to_i32().unwrap(), v)
+    }
+}
+
+make_subclass!(Source3D, Source);
+
+impl SpatializedSource for Source3D {}
+
+unsafe impl Send for Source3D {}
+
+unsafe impl Sync for Source3D {}
 
 #[derive(Clone, Debug)]
 pub struct Synthizer;
