@@ -15,7 +15,6 @@ jobs:
       - run: |
           Set-ExecutionPolicy RemoteSigned -scope CurrentUser
           Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
-          scoop update
           scoop install llvm ninja
           cargo fmt --all -- --check
           cargo clippy --all-targets --all-features
