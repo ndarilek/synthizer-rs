@@ -98,6 +98,14 @@ enum Property {
     NoiseType = SYZ_PROPERTIES_SYZ_P_NOISE_TYPE,
 }
 
+#[derive(Primitive)]
+#[repr(i32)]
+enum PannerStrategy {
+    HRTF = SYZ_PANNER_STRATEGY_SYZ_PANNER_STRATEGY_HRTF,
+    Stereo = SYZ_PANNER_STRATEGY_SYZ_PANNER_STRATEGY_STEREO,
+    Count = SYZ_PANNER_STRATEGY_SYZ_PANNER_STRATEGY_COUNT,
+}
+
 impl Handle {
     fn get_i(&self, property: i32) -> Result<i32, SynthizerError> {
         let out: *mut i32 = null_mut();
@@ -268,6 +276,10 @@ impl Context {
     pub fn new_direct_source(&mut self) -> Result<DirectSource, SynthizerError> {
         DirectSource::new(&self)
     }
+
+    pub fn new_panned_source(&mut self) -> Result<PannedSource, SynthizerError> {
+        PannedSource::new(&self)
+    }
 }
 
 impl Deref for Context {
@@ -390,6 +402,7 @@ pub trait Source {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct DirectSource(Handle);
 
 impl DirectSource {
@@ -403,6 +416,76 @@ impl DirectSource {
 }
 
 make_subclass!(DirectSource, Source);
+
+trait SpatializedSource: Source {
+    fn get_panner_strategy(&self) -> Result<i32, SynthizerError> {
+        self.handle()
+            .get_i(Property::PannerStrategy.to_i32().unwrap())
+    }
+
+    fn set_panner_strategy(&self, value: i32) -> Result<(), SynthizerError> {
+        self.handle()
+            .set_i(Property::PannerStrategy.to_i32().unwrap(), value)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct PannedSource(Handle);
+
+impl PannedSource {
+    fn new(context: &Context) -> Result<Self, SynthizerError> {
+        let mut handle = Handle(0);
+        wrap!(
+            unsafe { syz_createPannedSource(&mut *handle, **context) },
+            Self(handle)
+        )
+    }
+
+    pub fn get_azimuth(&self) -> Result<f64, SynthizerError> {
+        let out = self.handle().get_d(Property::Azimuth.to_i32().unwrap())?;
+        let out = unsafe { out.as_ref() };
+        let out = out.cloned();
+        Ok(out.unwrap())
+    }
+
+    pub fn set_azimuth(&self, v: f64) -> Result<(), SynthizerError> {
+        self.handle().set_d(Property::Azimuth.to_i32().unwrap(), v)
+    }
+
+    pub fn get_elevation(&self) -> Result<f64, SynthizerError> {
+        let out = self.handle().get_d(Property::Elevation.to_i32().unwrap())?;
+        let out = unsafe { out.as_ref() };
+        let out = out.cloned();
+        Ok(out.unwrap())
+    }
+
+    pub fn set_elevation(&self, v: f64) -> Result<(), SynthizerError> {
+        self.handle()
+            .set_d(Property::Elevation.to_i32().unwrap(), v)
+    }
+
+    pub fn get_panning_scalar(&self) -> Result<f64, SynthizerError> {
+        let out = self
+            .handle()
+            .get_d(Property::PanningScalar.to_i32().unwrap())?;
+        let out = unsafe { out.as_ref() };
+        let out = out.cloned();
+        Ok(out.unwrap())
+    }
+
+    pub fn set_panning_scalar(&self, v: f64) -> Result<(), SynthizerError> {
+        self.handle()
+            .set_d(Property::PanningScalar.to_i32().unwrap(), v)
+    }
+}
+
+make_subclass!(PannedSource, Source);
+
+impl SpatializedSource for PannedSource {}
+
+unsafe impl Send for PannedSource {}
+
+unsafe impl Sync for PannedSource {}
 
 #[derive(Clone, Debug)]
 pub struct Synthizer;
