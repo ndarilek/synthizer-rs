@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build_windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          choco install -y llvm
+          rustup update
+          cargo build --release
+
+  publish_sys::
+    name: Publish sys create
+    runs-on: windows-latest
+    needs: [build_windows]
+    env:
+      CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          choco install -y llvm
+          rustup update
+          cargo login $CARGO_TOKEN
+          cd synthizer-sys
+          cargo package
+          cargo publish || true
+
+  publish:
+    name: Publish
+    runs-on: windows-latest
+    needs: [build_windows]
+    env:
+      CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          rustup update
+          cargo login $CARGO_TOKEN
+          cd synthizer
+          cargo publish
