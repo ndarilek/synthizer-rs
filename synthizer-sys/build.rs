@@ -15,8 +15,6 @@ fn main() -> Result<(), io::Error> {
     lib_dir.push("synthizer");
     cmd.arg(lib_dir);
     cmd.args(&["-G", "Ninja"]);
-    cmd.arg("-DCMAKE_C_COMPILER=clang.exe");
-    cmd.arg("-DCMAKE_CXX_COMPILER=clang++.exe");
     if profile == "debug" {
         cmd.arg("-DCMAKE_BUILD_TYPE=Debug");
     }
