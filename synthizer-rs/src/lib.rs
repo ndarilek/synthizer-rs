@@ -187,6 +187,10 @@ impl Drop for Handle {
     }
 }
 
+unsafe impl Send for Handle {}
+
+unsafe impl Sync for Handle {}
+
 pub enum Protocol {
     File,
 }
@@ -290,6 +294,10 @@ impl Deref for Context {
     }
 }
 
+unsafe impl Send for Context {}
+
+unsafe impl Sync for Context {}
+
 macro_rules! make_subclass {
     ($subclass:ident, $superclass:ty) => {
         impl $superclass for $subclass {
@@ -337,6 +345,10 @@ impl StreamingGenerator {
 
 make_subclass!(StreamingGenerator, Generator);
 
+unsafe impl Send for StreamingGenerator {}
+
+unsafe impl Sync for StreamingGenerator {}
+
 pub struct BufferGenerator(Handle);
 
 impl BufferGenerator {
@@ -382,6 +394,10 @@ impl BufferGenerator {
 
 make_subclass!(BufferGenerator, Generator);
 
+unsafe impl Send for BufferGenerator {}
+
+unsafe impl Sync for BufferGenerator {}
+
 pub trait Source {
     fn handle(&self) -> &Handle;
 
@@ -416,6 +432,10 @@ impl DirectSource {
 }
 
 make_subclass!(DirectSource, Source);
+
+unsafe impl Send for DirectSource {}
+
+unsafe impl Sync for DirectSource {}
 
 trait SpatializedSource: Source {
     fn get_panner_strategy(&self) -> Result<i32, SynthizerError> {
