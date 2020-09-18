@@ -244,13 +244,30 @@ macro_rules! d {
     ($name:ident, $property:path) => {
         paste! {
             pub fn [<get_ $name>](&self) -> Result<f64, SynthizerError> {
-        let out = self.handle().get_d($property.to_i32().unwrap())?;
-        let out = unsafe { out.as_ref() };
-        let out = out.cloned();
-        Ok(out.unwrap())
+                let out = self.handle().get_d($property.to_i32().unwrap())?;
+                let out = unsafe { out.as_ref() };
+                let out = out.cloned();
+                Ok(out.unwrap())
             }
 
             pub fn [<set_ $name>](&self, value: f64) -> Result<(), SynthizerError> {
+                self.handle().set_d($property.to_i32().unwrap(), value)
+            }
+        }
+    };
+}
+
+macro_rules! td {
+    ($name:ident, $property:path) => {
+        paste! {
+            fn [<get_ $name>](&self) -> Result<f64, SynthizerError> {
+                let out = self.handle().get_d($property.to_i32().unwrap())?;
+                let out = unsafe { out.as_ref() };
+                let out = out.cloned();
+                Ok(out.unwrap())
+            }
+
+            fn [<set_ $name>](&self, value: f64) -> Result<(), SynthizerError> {
                 self.handle().set_d($property.to_i32().unwrap(), value)
             }
         }
@@ -496,7 +513,7 @@ pub trait Source {
         wrap!(unsafe { syz_sourceRemoveGenerator(**self.handle(), **generator.handle()) })
     }
 
-    ti!(gain, Property::Gain);
+    td!(gain, Property::Gain);
 }
 
 #[derive(Clone, Debug)]
