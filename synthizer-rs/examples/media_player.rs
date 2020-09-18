@@ -11,7 +11,6 @@ use synthizer::{
 
 struct Data {
     source: Source3D,
-    buffer: Buffer,
     generator: BufferGenerator,
 }
 
@@ -31,16 +30,15 @@ fn main() -> Result<(), SynthizerError> {
             let source = context.new_source3d()?;
             let data = Data {
                 source: source,
-                buffer: buffer,
                 generator: generator,
             };
             data.source.add_generator(&data.generator)?;
             let mut shell = Shell::new(Arc::new(data));
-            shell.new_command_noargs("play", "Play media.", move |io, data| {
+            shell.new_command_noargs("play", "Play media.", move |_io, data| {
                 data.source.add_generator(&data.generator)?;
                 Ok(())
             });
-            shell.new_command_noargs("pause", "Pause media.", |io, data| {
+            shell.new_command_noargs("pause", "Pause media.", |_io, data| {
                 data.source.remove_generator(&data.generator)?;
                 Ok(())
             });
@@ -102,9 +100,8 @@ fn main() -> Result<(), SynthizerError> {
                     Ok(())
                 },
             );
-            shell.new_command_noargs("quit", "End this madness.", |io, data| {
+            shell.new_command_noargs("quit", "End this madness.", |_io, _data| {
                 std::process::exit(0);
-                Ok(())
             });
             shell.run_loop(&mut ShellIO::default());
         } else {
