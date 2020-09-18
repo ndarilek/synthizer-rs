@@ -1,9 +1,13 @@
 [package]
+
 name = "synthizer"
 version = "0.1.0"
 authors = ["Nolan Darilek <nolan@thewordnerd.info>"]
+description = "A library for game/VR audio applications"
+repository = "https://github.com/ndarilek/synthizer-rs"
+homepage = "https://github.com/ndarilek/synthizer-rs"
+license-file = "LICENSE"
 edition = "2018"
-license-file = "../LICENSE"
 
 [dependencies]
 
@@ -11,7 +15,7 @@ enum-primitive-derive = "0.2"
 log = "0.4"
 num-traits = "0.2"
 paste = "1"
-synthizer-sys = { path = "../synthizer-sys" }
+synthizer-sys = { version = "0.7", path = "../synthizer-sys" }
 thiserror = "1"
 
 [dev-dependencies]

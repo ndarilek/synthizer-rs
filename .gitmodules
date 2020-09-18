@@ -1,3 +1,3 @@
 [submodule "synthizer"]
-	path = synthizer
+	path = synthizer-sys/synthizer
 	url = https://github.com/camlorn/synthizer

@@ -11,7 +11,6 @@ fn main() -> Result<(), io::Error> {
     let mut cmd = Command::new(&executable);
     cmd.current_dir(&out_dir);
     let mut lib_dir = env::current_dir()?;
-    lib_dir.pop();
     lib_dir.push("synthizer");
     cmd.arg(lib_dir);
     cmd.args(&["-G", "Ninja"]);
@@ -39,8 +38,8 @@ fn main() -> Result<(), io::Error> {
     println!("cargo:rustc-link-search=native={}", &out_dir);
     println!("cargo:rustc-link-lib=static=synthizer");
     let _ = bindgen::builder()
-        .header("../synthizer/include/synthizer.h")
-        .header("../synthizer/include/synthizer_constants.h")
+        .header("synthizer/include/synthizer.h")
+        .header("synthizer/include/synthizer_constants.h")
         .generate()
         .unwrap()
         .write_to_file(Path::new(&out_dir).join("synthizer_sys.rs"));
