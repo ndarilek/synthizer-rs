@@ -7,6 +7,7 @@ on:
 
 env:
   LIBCLANG_PATH: C:\Users\runneradmin\scoop\apps\llvm\current\bin
+  CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}
 
 jobs:
   build_windows:
@@ -30,8 +31,6 @@ jobs:
     name: Publish sys crate
     runs-on: windows-latest
     needs: [build_windows]
-    env:
-      CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -52,8 +51,6 @@ jobs:
     name: Publish
     runs-on: windows-latest
     needs: [build_windows]
-    env:
-      CARGO_TOKEN: ${{ secrets.CARGO_TOKEN }}
     steps:
       - uses: actions/checkout@v2
         with:
