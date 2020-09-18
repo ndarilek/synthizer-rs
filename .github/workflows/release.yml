@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+env:
+  LIBCLANG_PATH: C:\Users\runneradmin\scoop\apps\llvm\current\bin
+
 jobs:
   build_windows:
     name: Build Windows
@@ -14,12 +17,17 @@ jobs:
         with:
           submodules: recursive
       - run: |
-          choco install -y llvm ninja
-          rustup update
+          Set-ExecutionPolicy RemoteSigned -scope CurrentUser
+          Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+          scoop install llvm ninja
+      - run: echo "::add-path::~\scoop\shims"
+      - run: |
+          cargo fmt --all -- --check
+          cargo clippy --all-targets --all-features
           cargo build --release
 
-  publish_sys::
-    name: Publish sys create
+  publish_sys:
+    name: Publish sys crate
     runs-on: windows-latest
     needs: [build_windows]
     env:
@@ -29,8 +37,11 @@ jobs:
         with:
           submodules: recursive
       - run: |
-          choco install -y llvm ninja
-          rustup update
+          Set-ExecutionPolicy RemoteSigned -scope CurrentUser
+          Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+          scoop install llvm ninja
+      - run: echo "::add-path::~\scoop\shims"
+      - run: |
           cargo login $CARGO_TOKEN
           cd synthizer-sys
           cargo package
@@ -47,7 +58,11 @@ jobs:
         with:
           submodules: recursive
       - run: |
-          rustup update
+          Set-ExecutionPolicy RemoteSigned -scope CurrentUser
+          Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
+          scoop install llvm ninja
+      - run: echo "::add-path::~\scoop\shims"
+      - run: |
           cargo login $CARGO_TOKEN
           cd synthizer
           cargo publish

@@ -4,12 +4,13 @@ on:
   push:
   pull_request:
 
+env:
+  LIBCLANG_PATH: C:\Users\runneradmin\scoop\apps\llvm\current\bin
+
 jobs:
   build_windows:
     name: Build Windows
     runs-on: windows-latest
-    env:
-      LIBCLANG_PATH: C:\Users\runneradmin\scoop\apps\llvm\current\bin
     steps:
       - uses: actions/checkout@v2
         with:
