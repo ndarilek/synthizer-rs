@@ -201,10 +201,7 @@ impl Handle {
 
 impl Drop for Handle {
     fn drop(&mut self) {
-        let v = unsafe { syz_handleFree(self.0) };
-        if v != 0 {
-            panic!(format!("Failed to free handle: error code {}", v));
-        }
+        unsafe { syz_handleFree(self.0) };
     }
 }
 
