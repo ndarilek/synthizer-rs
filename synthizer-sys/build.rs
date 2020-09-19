@@ -14,6 +14,7 @@ fn main() -> Result<(), io::Error> {
     cmd.arg(lib_dir);
     cmd.args(&["-G", "Ninja"]);
     cmd.arg("-DCMAKE_BUILD_TYPE=Release");
+    cmd.arg("-DSYNTHIZER_LIB_TYPE=SHARED");
     let output = cmd.output()?;
     io::stdout().write_all(&output.stdout)?;
     io::stderr().write_all(&output.stderr)?;
