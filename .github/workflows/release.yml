@@ -41,7 +41,7 @@ jobs:
           scoop install llvm ninja
       - run: echo "::add-path::~\scoop\shims"
       - run: |
-          cargo login $CARGO_TOKEN
+          cargo login ${env:CARGO_TOKEN}
           # We ignore failed publishes to avoid failing the build if publishing new synthizer versions but existing synthizer-sys versions.
           # So let's explicitly run a package operation to avoid pushing broken code.
           cargo package --manifest-path synthizer-sys/Cargo.toml
@@ -61,5 +61,5 @@ jobs:
           scoop install llvm ninja
       - run: echo "::add-path::~\scoop\shims"
       - run: |
-          cargo login $CARGO_TOKEN
+          cargo login ${env:CARGO_TOKEN}
           cargo publish --manifest-path synthizer-rs/Cargo.toml
