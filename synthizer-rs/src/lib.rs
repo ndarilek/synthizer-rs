@@ -271,6 +271,81 @@ macro_rules! td {
     };
 }
 
+macro_rules! d3 {
+    ($name:ident, $property:path) => {
+        paste! {
+            pub fn [<get_ $name>](&self) -> Result<(f64, f64, f64), SynthizerError> {
+                let (x, y, z) = self.handle().get_d3($property.to_i32().unwrap())?;
+                let x = unsafe { x.as_ref() };
+                let x = x.cloned();
+                let y = unsafe { y.as_ref() };
+                let y = y.cloned();
+                let z = unsafe { z.as_ref() };
+                let z = z.cloned();
+                Ok((x.unwrap(), y.unwrap(), z.unwrap()))
+            }
+
+            pub fn [<set_ $name>](&self, x: f64, y: f64, z: f64) -> Result<(), SynthizerError> {
+                self.handle()
+                    .set_d3(Property::Position.to_i32().unwrap(), x, y, z)
+            }
+        }
+    };
+}
+
+macro_rules! d6 {
+    ($name:ident, $property:path) => {
+        paste! {
+            pub fn [<get_ $name>](&self) -> Result<(f64, f64, f64, f64, f64, f64), SynthizerError> {
+                let (x1, y1, z1, x2, y2, z2) = self
+                    .handle()
+                    .get_d6($property.to_i32().unwrap())?;
+                let x1 = unsafe { x1.as_ref() };
+                let x1 = x1.cloned();
+                let y1 = unsafe { y1.as_ref() };
+                let y1 = y1.cloned();
+                let z1 = unsafe { z1.as_ref() };
+                let z1 = z1.cloned();
+                let x2 = unsafe { x2.as_ref() };
+                let x2 = x2.cloned();
+                let y2 = unsafe { y2.as_ref() };
+                let y2 = y2.cloned();
+                let z2 = unsafe { z2.as_ref() };
+                let z2 = z2.cloned();
+                Ok((
+                    x1.unwrap(),
+                    y1.unwrap(),
+                    z1.unwrap(),
+                    x2.unwrap(),
+                    y2.unwrap(),
+                    z2.unwrap(),
+                ))
+            }
+
+            pub fn [<set_ $name>](
+                &self,
+                x1: f64,
+                y1: f64,
+                z1: f64,
+                x2: f64,
+                y2: f64,
+                z2: f64,
+            ) -> Result<(), SynthizerError> {
+                self.handle().set_d6(
+                    $property.to_i32().unwrap(),
+                    x1,
+                    y1,
+                    z1,
+                    x2,
+                    y2,
+                    z2,
+                )
+            }
+
+        }
+    };
+}
+
 pub enum Protocol {
     File,
 }
@@ -372,6 +447,19 @@ impl Context {
     pub fn new_source3d(&mut self) -> Result<Source3D, SynthizerError> {
         Source3D::new(&self)
     }
+
+    fn handle(&self) -> &Handle {
+        &self.0
+    }
+
+    d3!(position, Property::Position);
+    d6!(orientation, Property::Orientation);
+    d!(distance_model, Property::DistanceModel);
+    d!(distance_ref, Property::DistanceRef);
+    d!(distance_max, Property::DistanceMax);
+    d!(rolloff, Property::Rolloff);
+    d!(closeness_boost, Property::ClosenessBoost);
+    d!(closeness_boost_distance, Property::ClosenessBoostDistance);
 }
 
 impl Deref for Context {
@@ -573,68 +661,8 @@ impl Source3D {
         )
     }
 
-    pub fn get_position(&self) -> Result<(f64, f64, f64), SynthizerError> {
-        let (x, y, z) = self.handle().get_d3(Property::Position.to_i32().unwrap())?;
-        let x = unsafe { x.as_ref() };
-        let x = x.cloned();
-        let y = unsafe { y.as_ref() };
-        let y = y.cloned();
-        let z = unsafe { z.as_ref() };
-        let z = z.cloned();
-        Ok((x.unwrap(), y.unwrap(), z.unwrap()))
-    }
-
-    pub fn set_position(&self, x: f64, y: f64, z: f64) -> Result<(), SynthizerError> {
-        self.handle()
-            .set_d3(Property::Position.to_i32().unwrap(), x, y, z)
-    }
-
-    pub fn get_orientation(&self) -> Result<(f64, f64, f64, f64, f64, f64), SynthizerError> {
-        let (x1, y1, z1, x2, y2, z2) = self
-            .handle()
-            .get_d6(Property::Orientation.to_i32().unwrap())?;
-        let x1 = unsafe { x1.as_ref() };
-        let x1 = x1.cloned();
-        let y1 = unsafe { y1.as_ref() };
-        let y1 = y1.cloned();
-        let z1 = unsafe { z1.as_ref() };
-        let z1 = z1.cloned();
-        let x2 = unsafe { x2.as_ref() };
-        let x2 = x2.cloned();
-        let y2 = unsafe { y2.as_ref() };
-        let y2 = y2.cloned();
-        let z2 = unsafe { z2.as_ref() };
-        let z2 = z2.cloned();
-        Ok((
-            x1.unwrap(),
-            y1.unwrap(),
-            z1.unwrap(),
-            x2.unwrap(),
-            y2.unwrap(),
-            z2.unwrap(),
-        ))
-    }
-
-    pub fn set_orientation(
-        &self,
-        x1: f64,
-        y1: f64,
-        z1: f64,
-        x2: f64,
-        y2: f64,
-        z2: f64,
-    ) -> Result<(), SynthizerError> {
-        self.handle().set_d6(
-            Property::Orientation.to_i32().unwrap(),
-            x1,
-            y1,
-            z1,
-            x2,
-            y2,
-            z2,
-        )
-    }
-
+    d3!(position, Property::Position);
+    d6!(orientation, Property::Orientation);
     d!(distance_model, Property::DistanceModel);
     d!(distance_ref, Property::DistanceRef);
     d!(distance_max, Property::DistanceMax);
