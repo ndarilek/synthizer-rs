@@ -97,6 +97,7 @@ enum Property {
     Rolloff = SYZ_PROPERTIES_SYZ_P_ROLLOFF,
     Looping = SYZ_PROPERTIES_SYZ_P_LOOPING,
     NoiseType = SYZ_PROPERTIES_SYZ_P_NOISE_TYPE,
+    PitchBend = SYZ_PROPERTIES_SYZ_P_PITCH_BEND,
 }
 
 #[derive(Primitive)]
@@ -558,6 +559,8 @@ impl BufferGenerator {
         let v = if v { 1 } else { 0 };
         self.handle().set_i(Property::Looping.to_i32().unwrap(), v)
     }
+
+    d!(pitch_bend, Property::PitchBend);
 }
 
 make_subclass!(BufferGenerator, Generator);
